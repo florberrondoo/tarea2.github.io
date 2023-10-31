@@ -1,4 +1,3 @@
-
 { constantes }
 { --------------------------------------------------- }
 const
@@ -14,7 +13,7 @@ const
 { --------------------------------------------------- }
 
 type
-
+   
    { tipo de los naturales }
    Natural	= QWord;
 
@@ -29,8 +28,8 @@ type
    Comparacion	= (menor, igual, mayor);
 
    { lista de palabras, que representa a un texto }
-   Texto	= ^NodoPal;
-   NodoPal	= record
+   Texto	= ^NodoPal; 
+   NodoPal	= record  
 		     info : Palabra;
 		     sig  : Texto
 		  end;
@@ -43,24 +42,24 @@ type
 
    { lista de ocurrencias de palabras }
    Ocurrencias	= ^Nodo;
-   Nodo		= record
+   Nodo		= record  
 		     palc : PalabraCant;
 		     sig  : Ocurrencias
 		  end;
 
    { arreglo indexado por los códigos de hash de las distintas palabras
-     y que para cada palabra contiene la lista de palabras que suelen
-     aparecer a continuación y la cantidad de veces que ocurrieron
+     y que para cada palabra contiene la lista de palabras que suelen 
+     aparecer a continuación y la cantidad de veces que ocurrieron 
      en los textos de entrenamiento }
    Predictor  = array [1 .. MAXHASH] of Ocurrencias;
 
 
    { arreglo con tope para retornar hasta MAXALT alternativas de palabras
      que pueden continuar }
-   Alternativas	= record
+   Alternativas	= record  
 		     pals : array [1..MAXALTS] of PalabraCant;
 		     tope : 0 .. MAXALTS
-		  end;
+		  end;	  
 
 
 
@@ -79,7 +78,7 @@ end;
 
 procedure mostrarOcurrencias (pals : Ocurrencias);
 { Muestra la lista de ocurrencias pals }
-var piter : Ocurrencias;
+var piter : Ocurrencias; 
 begin
    piter := pals;
    while piter <> NIL do
@@ -99,7 +98,7 @@ begin
    for k := 1 to MAXHASH do
       if pred[k] <> NIL then
       begin
-	 write (k, ': ');
+	 write (k, ': ');    
 	 mostrarOcurrencias(pred[k])
       end
 end;
@@ -123,15 +122,15 @@ procedure leerMinuscula (var f : text; var c: char);
 { El argumento f indica o un archivo o la entrada estándar desde el teclado }
 begin
    read (f, c);
-   if c in ['A'..'Z'] then c := chr (ord ('a') - ord ('A') + ord(c))
+   if c in ['A'..'Z'] then c := chr (ord ('a') - ord ('A') + ord(c))   
 end;
 
 procedure leerPalabra (var f : text; var p :Palabra );
 { Lee una palabra usando un autómata con tres estados }
 type TEstado =  (START, s, STOP);
 const carValidos =  ['a'..'z'];   { Caracteres válidos para una palabra }
-var c	 : char;
-   estado : TEstado;
+var c	 : char;                  
+   estado : TEstado;              
 begin
    with p do
    begin
@@ -196,7 +195,7 @@ begin
       { p es la palabra a guardar en la lista }
       nuevoNodo (p, l); it := l;   { guarda p en la lista }
       leerPalabra (f, p);          { lee la palabra p }
-      while p.tope <> 0 do         { mientras puede leer palabras (no vacías) }
+      while p.tope <> 0 do         { mientras puede leer palabras (no vacías) } 
       begin
 	 nuevoNodo (p, it^.sig); it := it^.sig;  { guarda p en la lista }
 	 leerPalabra (f, p)            { lee la palabra p }
@@ -220,10 +219,7 @@ begin
    end
 end;
 
-
-
 /////////////////////////////////////////////////////////////////////////////////////
-
 
 function hash ( semilla, paso, N : Natural; p : Palabra ) : Natural;
 
@@ -233,9 +229,9 @@ var i:integer;
 begin
     codigo:= semilla;
 
-    for (i:=1 to p.tope) do
+    for i:=1 to p.tope do
     begin
-        codigo:= ((codigo * paso) + ord(p.cadena[i].Letra))
+        codigo:= ((codigo * paso) + ord(p.cadena[i]))
     end;
 
     codigo:= codigo mod N;
@@ -253,12 +249,12 @@ begin
 
     if(p1.tope <= p2.tope) then
     begin
-        while (i <= p1.tope) and (p1.cadena[i].Letra = p2.cadena[i].Letra) do
+        while (i <= p1.tope) and (p1.cadena[i] = p2.cadena[i]) do
             i:= i+1;
 
         if (i <= p1.tope) then
         begin
-            mm:= (ord(p1.cadena[i].Letra) < ord(p2.cadena[i].Letra));
+            mm:= (ord(p1.cadena[i]) < ord(p2.cadena[i]));
             if (mm) then
                 compa:= menor
             else
@@ -271,12 +267,12 @@ begin
 
     else
     begin
-        while (i <= p2.tope) and ((p2.cadena[i].Letra = p1.cadena[i].Letra)) do
+        while (i <= p2.tope) and ((p2.cadena[i] = p1.cadena[i])) do
             i:= i+1;
 
         if (i <= p2.tope) then
         begin
-            mm:= (ord(p1.cadena[i].Letra) < ord(p2.cadena[i].Letra));
+            mm:= (ord(p1.cadena[i]) < ord(p2.cadena[i]));
             if (mm) then
                 compa:= menor
             else
@@ -287,4 +283,72 @@ begin
     comparaPalabra:= compa;
 end;
 
+function mayorPalabraCant( pc1, pc2 : PalabraCant ) : boolean;
+begin
+	mayorPalabraCant:= ((pc1.cant = pc2.cant) or (pc1.cant > pc2.cant)) and (comparaPalabra(pc1.pal, pc2.pal) = mayor);
+end;
 
+procedure agregarOcurrencia ( p : Palabra; var pals : Ocurrencias );
+
+var a,nuevo:Ocurrencias;
+
+begin
+	a:= pals;
+
+	new(nuevo);
+	nuevo^.palc.pal:= p;
+	nuevo^.palc.cant:= 1;
+	nuevo^.sig:= nil;
+	
+	while (a <> nil) and (comparaPalabra(p,a^.palc.pal) <> igual) do
+		a:= a^.sig;
+	
+	if (a = nil) then
+	begin
+		a:= pals;
+		
+		while (a^.sig <> nil) do
+			a:= a^.sig;
+		
+		a^.sig:= nuevo;
+	end
+	
+	else
+	begin
+		a^.palc.cant:= a^.palc.cant + 1;
+	end;
+end;
+
+procedure inicializarPredictor ( var pred: Predictor );
+
+var a:Ocurrencias;
+	i,k:integer;
+	
+begin
+	k:= 1;
+	
+	while (pred[k] <> nil) do
+		k:= k+1;
+	
+	for i:=1 to k do
+	begin
+		a:= pred[k];
+		pred[k]:= pred[k]^.sig;
+		dispose(a)
+	end;
+end;
+
+procedure entrenarPredictor ( txt : Texto; var pred: Predictor );
+begin
+	
+end;
+
+procedure insOrdAlternativas ( pc : PalabraCant; var alts: Alternativas );
+begin
+	
+end;
+
+procedure obtenerAlternativas ( p : Palabra; pred : Predictor; var alts: Alternativas );
+begin
+	
+end;
